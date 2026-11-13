@@ -12,22 +12,21 @@ import os
 from tensorflow.keras.preprocessing import image_dataset_from_directory
 from tensorflow.keras.layers import RandomFlip, RandomRotation
 BATCH_SIZE = 4
-IMG_SIZE = (200, 200)
+IMG_SIZE = (224, 224)
 directory = str(Path.home() / "Desktop" / "cat")
-train_dataset = image_dataset_from_directory(directory,
-                                             shuffle=True,
-                                             batch_size=BATCH_SIZE,
-                                             image_size=IMG_SIZE,
-                                             validation_split=0.2,
-                                             subset='training',
-                                             seed=42)
-validation_dataset = image_dataset_from_directory(directory,
-                                             shuffle=True,
-                                             batch_size=BATCH_SIZE,
-                                             image_size=IMG_SIZE,
-                                             validation_split=0.2,
-                                             subset='validation',
-                                             seed=42)
+train_dataset, remaining_dataset = image_dataset_from_directory(
+    directory,
+    batch_size=BATCH_SIZE,
+    image_size=IMG_SIZE,
+    validation_split=0.30,
+    subset="both",
+    seed=42
+)
+
+remaining_dataset = remaining_dataset.unbatch()
+val_size = int(remaining_dataset.cardinality().numpy()) // 2
+validation_dataset = remaining_dataset.take(val_size).batch(BATCH_SIZE)
+testing_dataset = remaining_dataset.skip(val_size).batch(BATCH_SIZE)
 
 print(train_dataset.class_names)
 for images, labels in train_dataset.take(1):

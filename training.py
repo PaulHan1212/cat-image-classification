@@ -24,13 +24,23 @@ train_dataset, remaining_dataset = image_dataset_from_directory(
 )
 
 remaining_dataset = remaining_dataset.unbatch()
-val_size = int(remaining_dataset.cardinality().numpy()) // 2
+remaining_dataset = remaining_dataset.cache()
+
+for _ in remaining_dataset:
+    pass
+val_size = sum(1 for _ in remaining_dataset) // 2
 validation_dataset = remaining_dataset.take(val_size).batch(BATCH_SIZE)
 testing_dataset = remaining_dataset.skip(val_size).batch(BATCH_SIZE)
 
+print(val_size)
+
+print("Training:", sum(x.shape[0] for x, y in train_dataset))
+print("Validation:", sum(x.shape[0] for x, y in validation_dataset))
+print("Testing:", sum(x.shape[0] for x, y in testing_dataset))
+
 print(train_dataset.class_names)
 for images, labels in train_dataset.take(1):
-    print("image shape：", images.shape)  # 應該是 (4, 160, 160, 3)
+    print("image shape：", images.shape)
     print("label：", labels.numpy())
 
 def data_augmenter():
@@ -179,6 +189,10 @@ history = model.fit(
     epochs=10
 )
 
+test_loss, test_accuracy = model.evaluate(testing_dataset)
+
+print(f"Test Accuracy: {test_accuracy:.2%}")
+
 
 from pathlib import Path
 import matplotlib.pyplot as plt
@@ -299,4 +313,3 @@ result_dottie = predict_image(
 
 print("Prediction for Yuan:", result_yuan)
 print("Prediction for Dottie:", result_dottie)
-
